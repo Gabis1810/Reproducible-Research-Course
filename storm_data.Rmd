@@ -1,0 +1,137 @@
+---
+title: "Storm Data"
+subtitle: "Reproducible Research Course"
+author: "Carlos Gabriel Guerra Farfán"
+date: "10/01/2021"
+output: html_document
+---
+
+# Impact of Severe Weather Events on Public Health and Economy in the United States
+
+## Synopsis
+
+In this report, we aim to analyze the impact of different weather events on public health and economy based on the storm database collected from the U.S. National Oceanic and Atmospheric Administration's (NOAA) from 1950 - 2011. We will use the estimates of fatalities, injuries, property and crop damage to decide which types of event are most harmful to the population health and economy. From these data, we found that excessive heat and tornado are most harmful with respect to population health, while flood, drought, and hurricane/typhoon have the greatest economic consequences.
+
+## Data Processing
+
+The data for this assignment come in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size. You can download the file from the course web site:
+
+```{r}
+# first clean the environment and setup the working directory
+rm(list= ls())
+setwd("C:/Users/gabis/OneDrive/Documentos/Scribble/7mo Semestre/Actividad Curricular Complementaria/Coursera/Reproducible Research/Semana 4")
+
+# now download file
+if (!file.exists("StormData.csv.bz2")) {
+    fileURL <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2'
+    download.file(fileURL, destfile='StormData.csv.bz2', method = 'curl')
+}
+noaaDF <- read.csv(bzfile('StormData.csv.bz2'),header=TRUE, stringsAsFactors = FALSE)
+# laad libraries for tidying - not all will be used in all this weeks assignment
+require(dplyr)
+require(tidyr)
+require(lubridate)
+require(ggplot2)
+```
+
+## Preliminary Analysis
+
+First a summary of the NU.S. National Oceanic and Atmospheric Administration’s (NOAA) storm database:
+
+```{r}
+summary(noaaDF)
+str(noaaDF)
+```
+
+## Results
+
+### 1 Address the question of which types of events are most harmful to population health
+
+Calculate the fatalities and injuries seperately.
+
+```{r}
+#The fatalities:
+totFatalities <- aggregate(noaaDF$FATALITIES, by = list(noaaDF$EVTYPE), "sum")
+names(totFatalities) <- c("Event", "Fatalities")
+totFatalitiesSorted <- totFatalities[order(-totFatalities$Fatalities), ][1:20, ]
+totFatalitiesSorted
+
+#The injuries:
+totInjuries <- aggregate(noaaDF$INJURIES, by = list(noaaDF$EVTYPE), "sum")
+names(totInjuries) <- c("Event", "Injuries")
+totInjuriesSorted <- totInjuries[order(-totInjuries$Injuries), ][1:20, ]
+totInjuriesSorted
+
+#Finally plot both the fatalities and injuries in a single plot:
+par(mfrow = c(1, 2), mar = c(10, 4, 2, 2), las = 3, cex = 0.7, cex.main = 1.4, cex.lab = 1.2)
+barplot(totFatalitiesSorted$Fatalities, names.arg = totFatalitiesSorted$Event, col = 'red',
+        main = 'Top 20 Weather Events for Fatalities', ylab = 'Number of Fatalities')
+barplot(totInjuriesSorted$Injuries, names.arg = totInjuriesSorted$Event, col = 'orange',
+        main = 'Top 20 Weather Events for Injuries', ylab = 'Number of Injuries')
+```  
+
+Thus we see that Tornados cause most deaths and injuries in the U.S. National Oceanic and Atmospheric Administration’s (NOAA) storm database. But Excessive heat causes second most deaths, whereas as far as injuries are conserned second to fourth causes have very similar values.
+
+### 2 Address the question of which types of events have the greatest economic consequences
+
+Calculate the cost of property and crop damages seperately.
+
+```{r}
+#The property:
+totProperty <- aggregate(noaaDF$PROPDMG, by = list(noaaDF$EVTYPE), "sum")
+names(totProperty) <- c("Event", "Property")
+totPropertySorted <- totProperty[order(-totProperty$Property), ][1:20, ]
+totPropertySorted
+
+#The crop:
+totCrop <- aggregate(noaaDF$CROPDMG, by = list(noaaDF$EVTYPE), "sum")
+names(totCrop) <- c("Event", "Crop")
+totCropSorted <- totCrop[order(-totCrop$Crop), ][1:20, ]
+totCropSorted
+
+#Next plot both the cost of property and crop damages in a single plot:
+par(mfrow = c(1, 2), mar = c(10, 4, 2, 2), las = 3, cex = 0.7, cex.main = 1.4, cex.lab = 1.2)
+barplot(totPropertySorted$Property, names.arg = totPropertySorted$Event, col = 'Brown',
+        main = 'Top 20 Weather Events for Property Damage ', ylab = 'Amount of Property Damage', ylim = c(0, 3500000))
+barplot(totCropSorted$Crop, names.arg = totCropSorted$Event, col = 'Green',
+        main = 'Top 20 Weather Events for Crop Damage', ylab = 'Amount of  Crop Damage', ylim = c(0, 3500000))
+
+#Finally the total damage by adding both costs (property and crop damage)
+totTotalCost <- aggregate(noaaDF$CROPDMG+noaaDF$PROPDMG, by = list(noaaDF$EVTYPE), "sum")
+names(totTotalCost) <- c("Event", "TotalCost")
+totTotalCostSorted <- totTotalCost[order(-totTotalCost$TotalCost), ][1:20, ]
+totTotalCostSorted
+
+#And a single plot
+par(mfrow = c(1,1), mar = c(10, 4, 2, 2), las = 3, cex = 0.7, cex.main = 1.4, cex.lab = 1.2)
+barplot(totTotalCostSorted$TotalCost, names.arg = totTotalCostSorted$Event, col = 'Black',
+        main = 'Top 20 Weather Events for total Damage ', ylab = 'Amount of total Damage', ylim = c(0, 3500000))
+```
+
+Thus we notice that tornadoes cause most total damage.
+
+## Results
+
+As for the impact on public health, we have got two sorted lists of severe weather events below by the number of people badly affected.
+
+```{r}
+totFatalitiesSorted
+totInjuriesSorted
+```
+
+And the following is a pair of graphs of total fatalities and total injuries affected by these severe weather events.
+
+Based on the above histograms, we find that **excessive heat** and **tornado** cause most fatalities; **tornato** causes most injuries in the United States from 1995 to 2011.
+
+As for the impact on economy, we have got two sorted lists below by the amount of money cost by damages.  
+
+```{r}
+totPropertySorted
+totCropSorted
+```
+
+Based on the above histograms, we find that **flood** and **hurricane/typhoon** cause most property damage; **drought** and **flood** causes most crop damage in the United States from 1995 to 2011.
+
+## Conclusion
+
+From these data, we found that **excessive heat** and **tornado** are most harmful with respect to population health, while **flood**, **drought**, and **hurricane/typhoon** have the greatest economic consequences.
